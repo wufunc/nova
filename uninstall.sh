@@ -63,7 +63,7 @@ agent_instruction_file() {
 append_unique_agent() {
   local candidate="$1"
   local existing=""
-  for existing in "${SELECTED_AGENTS[@]}"; do
+  for existing in "${SELECTED_AGENTS[@]:-}"; do
     if [ "$existing" = "$candidate" ]; then
       return
     fi
