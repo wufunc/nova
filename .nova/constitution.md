@@ -2,7 +2,7 @@
 
 ## Core Principles
 
-1. **Skills must be generic**: No skill file may contain project-specific paths, configurations, or logic. Skills must work for any Claude Code user in any project.
+1. **Skills must be generic**: No skill file may contain project-specific paths, configurations, or logic. Skills must work for any supported AI coding agent user in any project (Claude Code, Codex, Cursor).
 
 2. **Bilingual documentation**: All user-facing documentation (README, DESIGN, CONTRIBUTING) must exist in both English and Chinese. Changes to one language must be reflected in the other.
 
@@ -10,6 +10,6 @@
 
 4. **Backward-compatible installs**: `install.sh` must be idempotent — running it multiple times must not duplicate content or break existing configurations.
 
-5. **No external dependencies**: The memory system must work with only Claude Code, Git, and standard POSIX tools. No databases, no npm packages, no Python dependencies.
+5. **No external dependencies**: The memory system must work with supported AI coding agents (Claude Code, Codex, Cursor), Git, and standard POSIX tools. No databases, no npm packages, no Python dependencies.
 
 6. **Dogfooding**: This project must use its own memory system (`.nova/memory/`). Changes to the skill system should be validated by using this project as a test case.
