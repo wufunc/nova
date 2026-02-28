@@ -1,6 +1,6 @@
 ---
 name: adr-creator
-description: Create Architecture Decision Records (ADR) documenting key technical decisions. Use ONLY when invoked by the memory skill after it has decided an ADR is needed. This skill is a pure writer - it does NOT decide whether to create an ADR. It receives context about architectural decisions and generates properly formatted ADR files in .aicoding/memory/adr/ directory.
+description: Create Architecture Decision Records (ADR) documenting key technical decisions. Use ONLY when invoked by the memory skill after it has decided an ADR is needed. This skill is a pure writer - it does NOT decide whether to create an ADR. It receives context about architectural decisions and generates properly formatted ADR files in .nova/memory/adr/ directory.
 ---
 
 # ADR Creator
@@ -15,7 +15,7 @@ Pure writer skill that creates Architecture Decision Records. Always invoked by 
 
 ```bash
 # List existing ADRs to find the highest number
-Glob pattern: .aicoding/memory/adr/[0-9]*.md
+Glob pattern: .nova/memory/adr/[0-9]*.md
 
 # Use next sequential three-digit number (001, 002, 003...)
 ```
@@ -94,11 +94,11 @@ YYYY-MM-DD HH:mm
 
 ### Step 4: Create ADR File
 
-Write to `.aicoding/memory/adr/` directory:
+Write to `.nova/memory/adr/` directory:
 
 ```bash
 # Example:
-Write .aicoding/memory/adr/003-redis-caching-strategy.md
+Write .nova/memory/adr/003-redis-caching-strategy.md
 ```
 
 Filename format: `NNN-短横线分隔的关键词.md`

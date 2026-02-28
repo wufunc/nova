@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # ──────────────────────────────────────────────────────
-# aicoding-memory installer
+# nova installer
 # Installs memory skills for Claude Code, Codex, and Cursor
 # ──────────────────────────────────────────────────────
 
-MARKER_START="<!-- aicoding-memory:start -->"
-MARKER_END="<!-- aicoding-memory:end -->"
+MARKER_START="<!-- nova:start -->"
+MARKER_END="<!-- nova:end -->"
 
 SKILL_NAMES=("memory" "git-commit" "adr-creator" "devlog-creator")
 SUPPORTED_AGENTS=("claude" "codex" "cursor")
@@ -56,7 +56,7 @@ agent_instruction_file() {
   case "$1" in
     claude) echo "$(agent_dir "$1")/CLAUDE.md" ;;
     codex) echo "$(agent_dir "$1")/AGENTS.md" ;;
-    cursor) echo "$(agent_dir "$1")/rules/aicoding-memory.mdc" ;;
+    cursor) echo "$(agent_dir "$1")/rules/nova.mdc" ;;
     *) return 1 ;;
   esac
 }
@@ -230,9 +230,9 @@ if [ -d "$SCRIPT_DIR/skills" ] \
   CLEANUP_DIR=""
 else
   # Remote install mode: clone repo to temp dir
-  REPO_URL="https://github.com/anthropic-lab/aicoding-memory.git"
+  REPO_URL="https://github.com/anthropic-lab/nova.git"
   CLEANUP_DIR="$(mktemp -d)"
-  echo "Cloning aicoding-memory..."
+  echo "Cloning nova..."
   git clone --depth 1 "$REPO_URL" "$CLEANUP_DIR" 2>/dev/null || error "Failed to clone repository. Check your network connection."
   SOURCE_DIR="$CLEANUP_DIR"
 fi
@@ -272,5 +272,5 @@ echo ""
 echo "Tip:"
 echo "  Use --agents to limit targets, e.g. bash install.sh --agents codex,cursor"
 echo ""
-echo "Optional: create .aicoding/constitution.md in your projects"
+echo "Optional: create .nova/constitution.md in your projects"
 echo "to define project-level principles."

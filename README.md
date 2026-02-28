@@ -1,4 +1,4 @@
-# aicoding-memory
+# nova
 
 **Give your AI coding agent a persistent memory across sessions.**
 
@@ -14,7 +14,7 @@ This leads to **repeated mistakes** and **decision drift** — carefully reasone
 
 ## The Solution
 
-aicoding-memory gives Claude Code, Codex, and Cursor a structured, persistent memory system with three complementary memory types:
+nova gives Claude Code, Codex, and Cursor a structured, persistent memory system with three complementary memory types:
 
 | Memory Type | Purpose | Example |
 |-------------|---------|---------|
@@ -60,8 +60,8 @@ Only the layers needed are loaded — most commits only use the first two layers
 
 ```bash
 # Clone and install
-git clone https://github.com/anthropic-lab/aicoding-memory.git
-cd aicoding-memory && bash install.sh
+git clone https://github.com/anthropic-lab/nova.git
+cd nova && bash install.sh
 ```
 
 By default, `install.sh` auto-detects installed agents and installs to all of them.
@@ -74,23 +74,23 @@ bash install.sh --agents codex,cursor
 Installed locations:
 - Claude: skills in `~/.claude/skills/`, rules in `~/.claude/CLAUDE.md`
 - Codex: skills in `~/.codex/skills/`, rules in `~/.codex/AGENTS.md`
-- Cursor: skills in `~/.cursor/skills/`, rules in `~/.cursor/rules/aicoding-memory.mdc`
+- Cursor: skills in `~/.cursor/skills/`, rules in `~/.cursor/rules/nova.mdc`
 
 ### First Use
 
 1. Open any project with Claude Code, Codex, or Cursor
 2. The agent automatically runs `/memory recall` at session start
-3. If `.aicoding/memory/` doesn't exist, it initializes automatically
+3. If `.nova/memory/` doesn't exist, it initializes automatically
 4. The agent generates `arch.md` from your repository structure
 5. When you `/git-commit`, memories are evaluated and created as needed
 
 ### Uninstall
 
 ```bash
-cd aicoding-memory && bash uninstall.sh
+cd nova && bash uninstall.sh
 ```
 
-Project-level memory data (`.aicoding/memory/`) is preserved — delete manually if you no longer need it.
+Project-level memory data (`.nova/memory/`) is preserved — delete manually if you no longer need it.
 
 ## Memory Types
 
@@ -124,7 +124,7 @@ The agent searches by tags, modules, and summary using Grep — no vector databa
 ## Project Structure
 
 ```
-aicoding-memory/
+nova/
 ├── skills/                    # Skill source files
 │   ├── memory/SKILL.md        # Core memory skill (recall + update)
 │   ├── git-commit/SKILL.md    # Commit workflow orchestrator
@@ -136,14 +136,14 @@ aicoding-memory/
 ├── uninstall.sh               # Uninstall script
 ├── DESIGN.md                  # Design document (English)
 ├── DESIGN.zh-CN.md            # Design document (Chinese)
-└── .aicoding/                 # This project's own memory (dogfooding)
+└── .nova/                 # This project's own memory (dogfooding)
 ```
 
 ## Configuration
 
 ### Constitution (Optional)
 
-Create `.aicoding/constitution.md` in any project to define its highest-priority principles. The agent reads this before every session and ensures all actions (code and memory) respect these constraints.
+Create `.nova/constitution.md` in any project to define its highest-priority principles. The agent reads this before every session and ensures all actions (code and memory) respect these constraints.
 
 ```markdown
 # Project Constitution
@@ -155,7 +155,7 @@ Create `.aicoding/constitution.md` in any project to define its highest-priority
 
 ### Memory Directory
 
-The `.aicoding/memory/` directory is auto-created. You can commit it to your repository so the memory persists across machines and team members.
+The `.nova/memory/` directory is auto-created. You can commit it to your repository so the memory persists across machines and team members.
 
 ## Design Philosophy
 

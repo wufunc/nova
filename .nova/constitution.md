@@ -12,4 +12,4 @@
 
 5. **No external dependencies**: The memory system must work with only Claude Code, Git, and standard POSIX tools. No databases, no npm packages, no Python dependencies.
 
-6. **Dogfooding**: This project must use its own memory system (`.aicoding/memory/`). Changes to the skill system should be validated by using this project as a test case.
+6. **Dogfooding**: This project must use its own memory system (`.nova/memory/`). Changes to the skill system should be validated by using this project as a test case.

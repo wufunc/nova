@@ -1,4 +1,4 @@
-<!-- aicoding-memory:start -->
+<!-- nova:start -->
 
 # Development Workflow
 
@@ -9,8 +9,8 @@
 
 ## Constitution Protocol
 
-- You MUST read `.aicoding/constitution.md` in the current repository first to understand the project's highest constitutional principles before proposing or implementing any solution.
-- If `.aicoding/constitution.md` does not exist, proceed with best effort and explicitly state that the constitution is missing.
+- You MUST read `.nova/constitution.md` in the current repository first to understand the project's highest constitutional principles before proposing or implementing any solution.
+- If `.nova/constitution.md` does not exist, proceed with best effort and explicitly state that the constitution is missing.
 - If a proposed solution conflicts with the constitution, MUST explain the conflict and rationale first, then continue implementation only after that explanation.
 
-<!-- aicoding-memory:end -->
+<!-- nova:end -->

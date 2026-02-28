@@ -46,7 +46,7 @@ Based on the analysis, generate a commit message following **Conventional Commit
 
 <body>
 
-Co-Authored-By: AI Coding Agent <noreply@aicoding-memory.dev>
+Co-Authored-By: AI Coding Agent <noreply@nova.dev>
 ```
 
 **Type options:**
@@ -96,7 +96,7 @@ git add -A
 git commit -m "$(cat <<'EOF'
 <generated commit message here>
 
-Co-Authored-By: AI Coding Agent <noreply@aicoding-memory.dev>
+Co-Authored-By: AI Coding Agent <noreply@nova.dev>
 EOF
 )"
 ```

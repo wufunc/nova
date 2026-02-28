@@ -10,14 +10,14 @@ description: "Project memory management: recall and update. Accepts an argument 
 
 ### Step 1: Ensure Memory Infrastructure (Auto-init)
 
-If `.aicoding/memory/` is missing, initialize it automatically and continue:
+If `.nova/memory/` is missing, initialize it automatically and continue:
 
 ```bash
 # Create memory directories (idempotent)
-mkdir -p .aicoding/memory/adr .aicoding/memory/devlog
+mkdir -p .nova/memory/adr .nova/memory/devlog
 ```
 
-If `.aicoding/memory/arch.md` is missing, generate it from repository facts
+If `.nova/memory/arch.md` is missing, generate it from repository facts
 using principles (do NOT use a fixed project template):
 
 1. Include only verifiable facts from repository files.
@@ -32,14 +32,14 @@ Suggested evidence sources (load only as needed):
 - Build/deploy config (`vercel.json`, `vite.config.*`, `tsconfig*`)
 
 When initialization happens, report once:
-`Memory infrastructure initialized at .aicoding/memory/`
+`Memory infrastructure initialized at .nova/memory/`
 
 ### Step 2: Load Architecture Overview
 
 Always load the architecture file:
 
 ```bash
-Read .aicoding/memory/arch.md
+Read .nova/memory/arch.md
 ```
 
 Present a brief summary (3-5 lines) of the project to the user.
@@ -54,16 +54,16 @@ If task context is available, search in parallel:
 
 ```bash
 # Search DevLog by tags
-Grep pattern: "^tags:.*KEYWORD" path: .aicoding/memory/devlog/
+Grep pattern: "^tags:.*KEYWORD" path: .nova/memory/devlog/
 
 # Search DevLog by modules
-Grep pattern: "^modules:.*MODULE_PATH" path: .aicoding/memory/devlog/
+Grep pattern: "^modules:.*MODULE_PATH" path: .nova/memory/devlog/
 
 # Search DevLog by summary
-Grep pattern: "^summary:.*KEYWORD" path: .aicoding/memory/devlog/
+Grep pattern: "^summary:.*KEYWORD" path: .nova/memory/devlog/
 
 # Search ADR titles
-Grep pattern: "^# ADR.*KEYWORD" path: .aicoding/memory/adr/
+Grep pattern: "^# ADR.*KEYWORD" path: .nova/memory/adr/
 ```
 
 Use multiple keywords extracted from the task. Search is case-insensitive.
@@ -97,10 +97,10 @@ Analyzes the current session and creates/updates memories as needed.
 Before analyzing the session, ensure memory directories exist:
 
 ```bash
-mkdir -p .aicoding/memory/adr .aicoding/memory/devlog
+mkdir -p .nova/memory/adr .nova/memory/devlog
 ```
 
-If `.aicoding/memory/arch.md` is missing, generate an initial version using
+If `.nova/memory/arch.md` is missing, generate an initial version using
 the same facts-only principles defined in recall Step 1, then continue.
 
 ### Step 1: Analyze Session
@@ -118,7 +118,7 @@ Apply this principle:
 > "Does this session's changes make any section of arch.md factually outdated, incomplete, or misleading?"
 
 Evaluation method:
-1. If arch.md is not already in context (e.g., compressed away in a long session), Read `.aicoding/memory/arch.md` now; otherwise reuse the version already loaded during recall mode
+1. If arch.md is not already in context (e.g., compressed away in a long session), Read `.nova/memory/arch.md` now; otherwise reuse the version already loaded during recall mode
 2. Review the session's code changes (files modified, added, deleted)
 3. For each section of arch.md, check if the described structure, data flow, conventions, or known limitations still accurately reflect the codebase after this session's changes
 

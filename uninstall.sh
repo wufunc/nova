@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # ──────────────────────────────────────────────────────
-# aicoding-memory uninstaller
+# nova uninstaller
 # Removes memory skills from Claude Code, Codex, and Cursor
 # ──────────────────────────────────────────────────────
 
-MARKER_START="<!-- aicoding-memory:start -->"
-MARKER_END="<!-- aicoding-memory:end -->"
+MARKER_START="<!-- nova:start -->"
+MARKER_END="<!-- nova:end -->"
 
 SKILL_NAMES=("memory" "git-commit" "adr-creator" "devlog-creator")
 SUPPORTED_AGENTS=("claude" "codex" "cursor")
@@ -55,7 +55,7 @@ agent_instruction_file() {
   case "$1" in
     claude) echo "$(agent_dir "$1")/CLAUDE.md" ;;
     codex) echo "$(agent_dir "$1")/AGENTS.md" ;;
-    cursor) echo "$(agent_dir "$1")/rules/aicoding-memory.mdc" ;;
+    cursor) echo "$(agent_dir "$1")/rules/nova.mdc" ;;
     *) return 1 ;;
   esac
 }
@@ -221,5 +221,5 @@ if [ "${#PROCESSED_AGENTS[@]}" -gt 0 ]; then
   done
   echo ""
 fi
-echo "Note: Project-level memory data (.aicoding/memory/) was NOT removed."
+echo "Note: Project-level memory data (.nova/memory/) was NOT removed."
 echo "Delete it manually in each project if you no longer need it."

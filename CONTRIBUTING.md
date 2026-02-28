@@ -1,4 +1,4 @@
-# Contributing to aicoding-memory
+# Contributing to nova
 
 Thank you for your interest in contributing! 感谢你对本项目的关注！
 
@@ -8,7 +8,7 @@ This guide is bilingual (English / 中文).
 
 ## Reporting Issues / 提交 Issue
 
-- Use [GitHub Issues](https://github.com/anthropic-lab/aicoding-memory/issues)
+- Use [GitHub Issues](https://github.com/anthropic-lab/nova/issues)
 - Include your agent type/version (Claude/Codex/Cursor) and OS
 - For bugs, describe: what you expected, what happened, and steps to reproduce
 - For feature requests, describe the use case
@@ -65,9 +65,9 @@ ls ~/.codex/skills/memory/
 ls ~/.cursor/skills/memory/
 
 # Verify instruction files/rules were updated
-grep "aicoding-memory" ~/.claude/CLAUDE.md
-grep "aicoding-memory" ~/.codex/AGENTS.md
-ls ~/.cursor/rules/aicoding-memory.mdc
+grep "nova" ~/.claude/CLAUDE.md
+grep "nova" ~/.codex/AGENTS.md
+ls ~/.cursor/rules/nova.mdc
 
 # Optional: install only selected agents
 bash install.sh --agents codex,cursor
@@ -84,16 +84,16 @@ ls ~/.codex/skills/memory/ 2>/dev/null || echo "Removed"
 ls ~/.cursor/skills/memory/ 2>/dev/null || echo "Removed"
 
 # Verify instruction files/rules were cleaned up
-grep "aicoding-memory" ~/.claude/CLAUDE.md || echo "Cleaned"
-grep "aicoding-memory" ~/.codex/AGENTS.md || echo "Cleaned"
-ls ~/.cursor/rules/aicoding-memory.mdc 2>/dev/null || echo "Removed"
+grep "nova" ~/.claude/CLAUDE.md || echo "Cleaned"
+grep "nova" ~/.codex/AGENTS.md || echo "Cleaned"
+ls ~/.cursor/rules/nova.mdc 2>/dev/null || echo "Removed"
 ```
 
 ### Test Memory Workflow
 
 1. Install the skills
 2. Open a test project with Claude Code, Codex, or Cursor
-3. Verify `/memory recall` works (auto-initializes `.aicoding/memory/`)
+3. Verify `/memory recall` works (auto-initializes `.nova/memory/`)
 4. Make a code change and run `/git-commit`
 5. Check if memory evaluation runs correctly
 

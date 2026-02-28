@@ -9,7 +9,7 @@ Meta: updated 2026-02-28
 
 ## Repository Structure
 ```
-aicoding-memory/
+nova/
 ├── skills/                    # 4 core memory workflow skills
 │   ├── memory/SKILL.md        # Memory recall + update (decision layer)
 │   ├── git-commit/SKILL.md    # Commit orchestration (orchestration layer)
@@ -26,7 +26,7 @@ aicoding-memory/
 ├── CONTRIBUTING.md            # Contribution guide (bilingual)
 ├── LICENSE                    # MIT
 ├── CHANGELOG.md               # Version history
-└── .aicoding/                 # Self-dogfooding memory
+└── .nova/                 # Self-dogfooding memory
 ```
 
 ## Module Boundaries
@@ -34,14 +34,14 @@ aicoding-memory/
 - `templates/`: Agent-specific rule/instruction templates:
   - `claude-md-snippet.md` (for `~/.claude/CLAUDE.md`)
   - `codex-agents-snippet.md` (for `~/.codex/AGENTS.md`)
-  - `cursor-rule-snippet.mdc` (for `~/.cursor/rules/aicoding-memory.mdc`)
+  - `cursor-rule-snippet.mdc` (for `~/.cursor/rules/nova.mdc`)
 - `examples/`: Read-only reference files, not installed anywhere.
-- `.aicoding/`: This project's own memory (dogfooding the system it distributes).
+- `.nova/`: This project's own memory (dogfooding the system it distributes).
 
 ## Install Mechanism
 - `install.sh` supports `--agents claude,codex,cursor` and auto-detects installed agents when omitted.
-- For Claude/Codex, installer updates marked blocks with `<!-- aicoding-memory:start -->` / `<!-- aicoding-memory:end -->`.
-- For Cursor, installer writes dedicated rule file `.cursor/rules/aicoding-memory.mdc`.
+- For Claude/Codex, installer updates marked blocks with `<!-- nova:start -->` / `<!-- nova:end -->`.
+- For Cursor, installer writes dedicated rule file `.cursor/rules/nova.mdc`.
 - Supports both local clone install and remote curl-pipe-bash install.
 
 ## Key Conventions

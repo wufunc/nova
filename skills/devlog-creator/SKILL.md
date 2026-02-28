@@ -1,6 +1,6 @@
 ---
 name: devlog-creator
-description: Create Development Log entries documenting coding experience and lessons learned. Use ONLY when invoked by the memory skill after it has decided a devlog entry is needed. This skill is a pure writer - it does NOT decide whether to create a devlog. It receives context about what to document and generates properly formatted devlog files in .aicoding/memory/devlog/ directory.
+description: Create Development Log entries documenting coding experience and lessons learned. Use ONLY when invoked by the memory skill after it has decided a devlog entry is needed. This skill is a pure writer - it does NOT decide whether to create a devlog. It receives context about what to document and generates properly formatted devlog files in .nova/memory/devlog/ directory.
 ---
 
 # DevLog Creator
@@ -15,7 +15,7 @@ Pure writer skill that creates DevLog entries. Always invoked by the memory skil
 
 ```bash
 # Find existing devlogs to determine next number
-Glob pattern: .aicoding/memory/devlog/[0-9]*.md
+Glob pattern: .nova/memory/devlog/[0-9]*.md
 
 # Use next sequential three-digit number (001, 002, 003...)
 ```
@@ -54,11 +54,11 @@ Analyze the conversation to extract development experience. Follow the format in
 
 ### Step 4: Create DevLog File
 
-Write to `.aicoding/memory/devlog/` directory:
+Write to `.nova/memory/devlog/` directory:
 
 ```bash
 # Example:
-Write .aicoding/memory/devlog/003-gemini-utf8-boundary.md
+Write .nova/memory/devlog/003-gemini-utf8-boundary.md
 ```
 
 Filename format: `NNN-短横线分隔的关键词.md` (use English or pinyin for filenames).
