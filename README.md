@@ -14,7 +14,7 @@ This leads to **repeated mistakes** and **decision drift** — carefully reasone
 
 ## The Solution
 
-aicoding-memory gives Claude Code a structured, persistent memory system with three complementary memory types:
+aicoding-memory gives Claude Code, Codex, and Cursor a structured, persistent memory system with three complementary memory types:
 
 | Memory Type | Purpose | Example |
 |-------------|---------|---------|
@@ -44,7 +44,8 @@ Session Start                          Code Commit
 ### Four-Layer Skill Architecture
 
 ```
-CLAUDE.md           → trigger rules (always in context)
+Agent instructions  → trigger rules (always in context)
+                     (CLAUDE.md / AGENTS.md / Cursor rule)
   └─ git-commit     → orchestration (commit workflow)
        └─ memory    → decision (should we record?)
             ├─ adr-creator    → writer (format + write ADR)
@@ -63,11 +64,21 @@ git clone https://github.com/anthropic-lab/aicoding-memory.git
 cd aicoding-memory && bash install.sh
 ```
 
-This installs 4 skills into `~/.claude/skills/` and adds memory management rules to `~/.claude/CLAUDE.md`.
+By default, `install.sh` auto-detects installed agents and installs to all of them.
+Use `--agents` to limit targets:
+
+```bash
+bash install.sh --agents codex,cursor
+```
+
+Installed locations:
+- Claude: skills in `~/.claude/skills/`, rules in `~/.claude/CLAUDE.md`
+- Codex: skills in `~/.codex/skills/`, rules in `~/.codex/AGENTS.md`
+- Cursor: skills in `~/.cursor/skills/`, rules in `~/.cursor/rules/aicoding-memory.mdc`
 
 ### First Use
 
-1. Open any project with Claude Code
+1. Open any project with Claude Code, Codex, or Cursor
 2. The agent automatically runs `/memory recall` at session start
 3. If `.aicoding/memory/` doesn't exist, it initializes automatically
 4. The agent generates `arch.md` from your repository structure
@@ -119,7 +130,7 @@ aicoding-memory/
 │   ├── git-commit/SKILL.md    # Commit workflow orchestrator
 │   ├── adr-creator/           # ADR writer + format references
 │   └── devlog-creator/        # DevLog writer + format references
-├── templates/                 # CLAUDE.md snippet for install
+├── templates/                 # Agent instruction snippets for install
 ├── examples/                  # Real-world examples
 ├── install.sh                 # Install script
 ├── uninstall.sh               # Uninstall script

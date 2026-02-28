@@ -9,7 +9,7 @@ This guide is bilingual (English / 中文).
 ## Reporting Issues / 提交 Issue
 
 - Use [GitHub Issues](https://github.com/anthropic-lab/aicoding-memory/issues)
-- Include your Claude Code version and OS
+- Include your agent type/version (Claude/Codex/Cursor) and OS
 - For bugs, describe: what you expected, what happened, and steps to reproduce
 - For feature requests, describe the use case
 
@@ -36,7 +36,7 @@ This guide is bilingual (English / 中文).
 Skills are the core of this project. When modifying skills:
 
 1. **Skills must be generic** — no project-specific logic, paths, or configurations
-2. **Test with a real Claude Code session** — verify the skill works end-to-end
+2. **Test with a real agent session** — verify the skill works end-to-end
 3. **Update references if format changes** — `references/` and `assets/` must stay in sync with `SKILL.md`
 4. **Don't break the four-layer architecture** — decision logic stays in `memory`, writing stays in creators
 
@@ -59,14 +59,18 @@ skill-name/
 # Test install on your machine
 bash install.sh
 
-# Verify skills are installed
+# Verify skills are installed (examples)
 ls ~/.claude/skills/memory/
-ls ~/.claude/skills/git-commit/
-ls ~/.claude/skills/adr-creator/
-ls ~/.claude/skills/devlog-creator/
+ls ~/.codex/skills/memory/
+ls ~/.cursor/skills/memory/
 
-# Verify CLAUDE.md was updated
+# Verify instruction files/rules were updated
 grep "aicoding-memory" ~/.claude/CLAUDE.md
+grep "aicoding-memory" ~/.codex/AGENTS.md
+ls ~/.cursor/rules/aicoding-memory.mdc
+
+# Optional: install only selected agents
+bash install.sh --agents codex,cursor
 ```
 
 ### Test Uninstallation
@@ -74,17 +78,21 @@ grep "aicoding-memory" ~/.claude/CLAUDE.md
 ```bash
 bash uninstall.sh
 
-# Verify skills are removed
+# Verify skills are removed (examples)
 ls ~/.claude/skills/memory/ 2>/dev/null || echo "Removed"
+ls ~/.codex/skills/memory/ 2>/dev/null || echo "Removed"
+ls ~/.cursor/skills/memory/ 2>/dev/null || echo "Removed"
 
-# Verify CLAUDE.md was cleaned up
+# Verify instruction files/rules were cleaned up
 grep "aicoding-memory" ~/.claude/CLAUDE.md || echo "Cleaned"
+grep "aicoding-memory" ~/.codex/AGENTS.md || echo "Cleaned"
+ls ~/.cursor/rules/aicoding-memory.mdc 2>/dev/null || echo "Removed"
 ```
 
 ### Test Memory Workflow
 
 1. Install the skills
-2. Open a test project with Claude Code
+2. Open a test project with Claude Code, Codex, or Cursor
 3. Verify `/memory recall` works (auto-initializes `.aicoding/memory/`)
 4. Make a code change and run `/git-commit`
 5. Check if memory evaluation runs correctly

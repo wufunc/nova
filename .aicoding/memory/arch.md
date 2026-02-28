@@ -3,22 +3,22 @@
 Meta: updated 2026-02-28
 
 ## Repository Scope
-- Open-source project providing a persistent memory system for Claude Code (AI coding agent).
+- Open-source project providing a persistent memory system for Claude Code, Codex, and Cursor.
 - Contains skill definitions, install/uninstall scripts, documentation, and examples.
 - No application runtime code — this is a tool/configuration distribution project.
 
 ## Repository Structure
 ```
 aicoding-memory/
-├── skills/                    # 4 core Claude Code skills
+├── skills/                    # 4 core memory workflow skills
 │   ├── memory/SKILL.md        # Memory recall + update (decision layer)
 │   ├── git-commit/SKILL.md    # Commit orchestration (orchestration layer)
 │   ├── adr-creator/           # ADR writer + format references (writer layer)
 │   └── devlog-creator/        # DevLog writer + format references (writer layer)
-├── templates/                 # CLAUDE.md snippet with install markers
+├── templates/                 # Agent instruction templates (Claude/Codex/Cursor)
 ├── examples/                  # Example arch.md, ADR, DevLog files
-├── install.sh                 # Copies skills to ~/.claude/skills/, updates CLAUDE.md
-├── uninstall.sh               # Removes skills, cleans CLAUDE.md
+├── install.sh                 # Multi-agent install: copies skills + injects agent rules
+├── uninstall.sh               # Multi-agent uninstall: removes skills + cleans agent rules
 ├── DESIGN.md                  # System design document (English)
 ├── DESIGN.zh-CN.md            # System design document (Chinese)
 ├── README.md                  # Project README (English)
@@ -30,21 +30,26 @@ aicoding-memory/
 ```
 
 ## Module Boundaries
-- `skills/`: Skill source files. Installed to `~/.claude/skills/` by `install.sh`.
-- `templates/`: Contains `claude-md-snippet.md` with marker comments for idempotent install/upgrade.
+- `skills/`: Skill source files. Installed to each supported agent's `skills/` directory.
+- `templates/`: Agent-specific rule/instruction templates:
+  - `claude-md-snippet.md` (for `~/.claude/CLAUDE.md`)
+  - `codex-agents-snippet.md` (for `~/.codex/AGENTS.md`)
+  - `cursor-rule-snippet.mdc` (for `~/.cursor/rules/aicoding-memory.mdc`)
 - `examples/`: Read-only reference files, not installed anywhere.
 - `.aicoding/`: This project's own memory (dogfooding the system it distributes).
 
 ## Install Mechanism
-- `install.sh` copies `skills/` to `~/.claude/skills/` and appends a marked block to `~/.claude/CLAUDE.md`.
-- Uses `<!-- aicoding-memory:start -->` / `<!-- aicoding-memory:end -->` markers for idempotent upgrades.
+- `install.sh` supports `--agents claude,codex,cursor` and auto-detects installed agents when omitted.
+- For Claude/Codex, installer updates marked blocks with `<!-- aicoding-memory:start -->` / `<!-- aicoding-memory:end -->`.
+- For Cursor, installer writes dedicated rule file `.cursor/rules/aicoding-memory.mdc`.
 - Supports both local clone install and remote curl-pipe-bash install.
 
 ## Key Conventions
 - All documentation is bilingual (English + Chinese).
 - Skill files must be generic — no project-specific or user-specific content.
-- Four-layer skill architecture: CLAUDE.md → git-commit → memory → writers.
+- Four-layer skill architecture: agent instructions → git-commit → memory → writers.
+- `git-commit` resolves sub-skills by relative sibling directories, not agent-specific absolute paths.
 
 ## Known Limitations
-- No automated test suite (manual testing via Claude Code sessions).
+- No automated test suite (manual testing via agent sessions).
 - Remote install depends on public GitHub repository URL.

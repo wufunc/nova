@@ -46,7 +46,7 @@ Based on the analysis, generate a commit message following **Conventional Commit
 
 <body>
 
-Co-Authored-By: Claude <noreply@anthropic.com>
+Co-Authored-By: AI Coding Agent <noreply@aicoding-memory.dev>
 ```
 
 **Type options:**
@@ -71,12 +71,14 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 Before staging and committing, execute the memory update **inline** — do NOT use the Skill tool (it creates turn boundaries that break atomic execution).
 
 **Procedure:**
-1. Use the **Read tool** to load `~/.claude/skills/memory/SKILL.md`
-2. Execute the **"Mode: update"** section (Steps 0–6) inline within this turn
-3. If the memory skill's logic decides an ADR is needed, use the **Read tool** to load `~/.claude/skills/adr-creator/SKILL.md` and execute it inline
-4. If the memory skill's logic decides a DevLog is needed, use the **Read tool** to load `~/.claude/skills/devlog-creator/SKILL.md` and execute it inline
-5. Note the result: list of created files + tag name, or "no updates needed"
-6. **Immediately** continue to Step 5 — do NOT pause or wait for user input
+1. Resolve the current skill directory from this file path (`.../git-commit/SKILL.md`)
+2. Set the sibling skills root to the parent directory of `git-commit/`
+3. Use the **Read tool** to load `<skills-root>/memory/SKILL.md`
+4. Execute the **"Mode: update"** section (Steps 0–6) inline within this turn
+5. If the memory skill's logic decides an ADR is needed, use the **Read tool** to load `<skills-root>/adr-creator/SKILL.md` and execute it inline
+6. If the memory skill's logic decides a DevLog is needed, use the **Read tool** to load `<skills-root>/devlog-creator/SKILL.md` and execute it inline
+7. Note the result: list of created files + tag name, or "no updates needed"
+8. **Immediately** continue to Step 5 — do NOT pause or wait for user input
 
 **Why not use the Skill tool:** The Skill tool injects a new prompt and creates a conversation turn boundary. This causes the workflow to stop after the memory update completes, requiring the user to say "continue." By using Read + inline execution, the entire git-commit workflow (Steps 1–8) runs as a single uninterrupted turn.
 
@@ -94,7 +96,7 @@ git add -A
 git commit -m "$(cat <<'EOF'
 <generated commit message here>
 
-Co-Authored-By: Claude <noreply@anthropic.com>
+Co-Authored-By: AI Coding Agent <noreply@aicoding-memory.dev>
 EOF
 )"
 ```
@@ -139,5 +141,5 @@ git log --oneline -3
 
 - This skill focuses on **detailed, meaningful** commit messages, not brief one-liners
 - The commit message should tell the story of what changed and why
-- Always include the Co-Authored-By line to credit Claude's contribution
+- Always include the Co-Authored-By line to credit the AI coding agent's contribution
 - Memory update ensures architecture docs, devlogs, and ADRs stay in sync with code changes
