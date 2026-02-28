@@ -68,22 +68,17 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ### Step 4: Invoke Memory Update
 
-Before staging and committing, use the **Skill tool** to invoke the **memory** skill with argument **update**:
+Before staging and committing, execute the memory update **inline** — do NOT use the Skill tool (it creates turn boundaries that break atomic execution).
 
-```
-Skill(skill="memory", args="update")
-```
+**Procedure:**
+1. Use the **Read tool** to load `~/.claude/skills/memory/SKILL.md`
+2. Execute the **"Mode: update"** section (Steps 0–6) inline within this turn
+3. If the memory skill's logic decides an ADR is needed, use the **Read tool** to load `~/.claude/skills/adr-creator/SKILL.md` and execute it inline
+4. If the memory skill's logic decides a DevLog is needed, use the **Read tool** to load `~/.claude/skills/devlog-creator/SKILL.md` and execute it inline
+5. Note the result: list of created files + tag name, or "no updates needed"
+6. **Immediately** continue to Step 5 — do NOT pause or wait for user input
 
-The memory skill will:
-- Update arch.md if architectural changes detected
-- Create DevLog entries if development experience worth recording
-- Create ADR entries if architectural decisions were made
-- Return: list of created files + tag name (or "no updates needed")
-
-**Note the returned tag name** - it will be used in Step 7.
-
-**CRITICAL — Uninterrupted Execution:**
-The memory skill internally invokes sub-skills (`devlog-creator`, `adr-creator`). When a sub-skill completes and returns, you MUST immediately continue the remaining workflow (memory's next steps → Step 5 → Step 6 → Step 7 → Step 8) without pausing or waiting for user input. Treat the entire git-commit workflow (Steps 1–8) as a single atomic operation — do NOT stop between steps unless an error requires user intervention.
+**Why not use the Skill tool:** The Skill tool injects a new prompt and creates a conversation turn boundary. This causes the workflow to stop after the memory update completes, requiring the user to say "continue." By using Read + inline execution, the entire git-commit workflow (Steps 1–8) runs as a single uninterrupted turn.
 
 ### Step 5: Stage All Changes
 
