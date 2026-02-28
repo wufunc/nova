@@ -1,152 +1,152 @@
-# AI Coding 项目记忆管理系统设计
+# AI Coding Project Memory Management System Design
 
-> 本文档描述了一套为 Claude Code（或类似 AI Coding Agent）设计的项目记忆管理方案，涵盖设计理念、架构决策和具体实现。
+> This document describes a project memory management system designed for Claude Code (or similar AI Coding Agents), covering design philosophy, architectural decisions, and implementation details.
 
 ---
 
-## 一、问题：AI Agent 的"金鱼记忆"
+## 1. The Problem: AI Agents Have Goldfish Memory
 
-AI Coding Agent 的每次会话都是一张白纸。它不记得上次为什么选了方案 A 而不是方案 B，不记得某个 API 有一个文档没写的隐藏限制，不记得上周调试了三小时才发现的根因。
+Every AI Coding Agent session starts as a blank slate. It doesn't remember why it chose approach A over approach B last time, doesn't remember that an API has an undocumented hidden limitation, and doesn't remember the root cause that took three hours to debug last week.
 
-这导致两个后果：
+This leads to two consequences:
 
-1. **重复犯错**：同一个坑，不同会话踩两遍。
-2. **决策漂移**：上次精心推导的架构决策，这次被无意推翻，因为 Agent 根本不知道它存在。
+1. **Repeated mistakes**: The same pitfall, encountered twice across different sessions.
+2. **Decision drift**: A carefully reasoned architectural decision from last time gets unknowingly overturned, because the Agent has no idea it exists.
 
-项目规模越大、开发周期越长，这个问题越严重。代码本身只记录了"是什么"，不记录"为什么这样"和"踩过什么坑"。而这些恰恰是 AI Agent 最需要的上下文。
+The larger the project and the longer the development cycle, the worse this problem becomes. Code itself only records "what is," not "why it's this way" or "what pitfalls were encountered." Yet these are precisely the context an AI Agent needs most.
 
-## 二、设计理念
+## 2. Design Philosophy
 
-### 2.1 记忆是代码的影子
+### 2.1 Memory Is the Shadow of Code
 
-代码表达的是最终状态，记忆表达的是到达这个状态的路径。一个好的记忆系统应该覆盖代码无法表达的三个维度：
+Code expresses the final state; memory expresses the path to reaching that state. A good memory system should cover three dimensions that code cannot express:
 
-| 维度 | 对应的问题 | 记忆类型 |
-|------|-----------|---------|
-| **全局** | 这个项目是什么？模块怎么组织？ | 架构概览（arch.md） |
-| **决策** | 为什么选了方案 A 而不是 B？ | 架构决策记录（ADR） |
-| **经验** | 做的过程中发现了什么非显而易见的东西？ | 开发日志（DevLog） |
+| Dimension | Corresponding Question | Memory Type |
+|-----------|----------------------|-------------|
+| **Global** | What is this project? How are modules organized? | Architecture Overview (arch.md) |
+| **Decisions** | Why was approach A chosen over B? | Architecture Decision Records (ADR) |
+| **Experience** | What non-obvious things were discovered during development? | Development Logs (DevLog) |
 
-这三种记忆互不重叠：
-- **arch.md** 是"地图"——告诉你现在在哪、周围有什么
-- **ADR** 是"路标"——告诉你为什么走这条路
-- **DevLog** 是"路人的提醒"——告诉你前面有个坑别踩
+These three memory types are mutually exclusive:
+- **arch.md** is the "map" — tells you where you are and what's around you
+- **ADR** is the "signpost" — tells you why this path was taken
+- **DevLog** is the "traveler's warning" — tells you there's a pitfall ahead
 
-### 2.2 写入要自动，召回要智能
+### 2.2 Writing Should Be Automatic, Recall Should Be Intelligent
 
-记忆系统的最大敌人是"忘记记录"。如果依赖开发者（或 Agent）主动记录，记忆库很快就会过时。因此：
+The biggest enemy of a memory system is "forgetting to record." If it depends on the developer (or Agent) to actively record, the memory store will quickly become stale. Therefore:
 
-- **写入时机绑定 git commit**：每次提交代码时自动分析会话，决定是否需要更新记忆。这是唯一可靠的自动化锚点——代码改了，记忆就该同步评估。
-- **召回时机绑定会话生命周期**：会话开始时自动加载基础上下文，开发过程中按需检索。
+- **Write timing is bound to git commit**: Every code commit automatically triggers session analysis to decide whether memory needs updating. This is the only reliable automation anchor — when code changes, memory should be evaluated in sync.
+- **Recall timing is bound to session lifecycle**: Basic context is automatically loaded at session start; on-demand retrieval happens during development.
 
-### 2.3 上下文窗口是公共资源
+### 2.3 Context Window Is a Public Resource
 
-AI Agent 的上下文窗口是有限的。每一行加载进去的文本都有机会成本。因此记忆系统必须遵循**最小加载原则**：
+An AI Agent's context window is finite. Every line loaded into it has an opportunity cost. Therefore, the memory system must follow the **minimum loading principle**:
 
-- 只有 arch.md（~200 行）是每次必加载的
-- ADR 和 DevLog 只在相关时才加载
-- 检索过程本身的开销应该尽可能低
+- Only arch.md (~200 lines) is loaded every time
+- ADR and DevLog are loaded only when relevant
+- The overhead of the retrieval process itself should be as low as possible
 
-这直接排除了"全量加载索引表"的方案——100 条记忆的索引就是 100 行上下文开销，而其中可能只有 2 条相关。
+This directly rules out the "load full index" approach — an index of 100 memories is 100 lines of context overhead, while perhaps only 2 of them are relevant.
 
-### 2.4 让 Agent 自己判断相关性
+### 2.4 Let the Agent Judge Relevance Itself
 
-没有向量数据库，没有 embedding，没有 BM25 排序。我们的检索引擎就是 AI Agent 本身。
+No vector database, no embeddings, no BM25 ranking. Our search engine is the AI Agent itself.
 
-这个看似"简陋"的设计其实是最合理的：Agent 理解自然语言、理解代码上下文、理解任务意图，它做相关性判断的能力远超任何关键词匹配算法。我们要做的只是**让它高效地扫描候选集**。
+This seemingly "primitive" design is actually the most reasonable: the Agent understands natural language, understands code context, understands task intent — its ability to judge relevance far exceeds any keyword matching algorithm. All we need to do is **let it efficiently scan the candidate set**.
 
-### 2.5 决策与执行分离
+### 2.5 Separate Decision from Execution
 
-记忆系统中，"要不要写"和"怎么写"是两个独立的关注点：
+In the memory system, "whether to write" and "how to write" are two independent concerns:
 
-- **"要不要写"** 需要理解整个会话上下文、判断信息的价值——这是高层决策
-- **"怎么写"** 需要遵循格式规范、生成结构化内容——这是执行细节
+- **"Whether to write"** requires understanding the full session context and judging information value — this is high-level decision-making
+- **"How to write"** requires following format specifications and generating structured content — this is execution detail
 
-将两者放在一个 skill 中意味着每次都要加载格式规范（即使 90% 的时候结论是"不需要写"）。分离后，常见路径只需要加载决策逻辑，大幅节省上下文。
+Putting both in a single skill means format specifications must be loaded every time (even though 90% of the time the conclusion is "no need to write"). After separation, the common path only needs to load decision logic, significantly saving context.
 
-### 2.6 宪法优先
+### 2.6 Constitution First
 
-每个项目可以有一份"宪法"（`.aicoding/constitution.md`），定义该项目最高优先级的原则和约束。记忆系统的所有操作——无论是 Agent 的代码修改还是记忆的写入——都不得违背宪法。
+Each project can have a "constitution" (`.aicoding/constitution.md`) that defines the project's highest-priority principles and constraints. All operations of the memory system — whether the Agent's code modifications or memory writing — must not violate the constitution.
 
-这解决了一个微妙问题：Agent 可能基于过往经验做出局部最优但违反项目基本原则的决策。宪法是对记忆系统的"制衡"——经验可以建议，但原则不可逾越。
+This solves a subtle problem: the Agent might make locally optimal but principle-violating decisions based on past experience. The constitution serves as a "check" on the memory system — experience can suggest, but principles must not be crossed.
 
-### 2.7 零配置启动
+### 2.7 Zero-Configuration Bootstrap
 
-记忆系统不应该有手动初始化步骤。当 Agent 进入一个新项目时，如果记忆基础设施不存在，系统应当自动创建目录、基于仓库事实生成初始 arch.md，然后继续正常工作。这意味着任何项目只要有全局 CLAUDE.md，开箱即用。
+The memory system should have no manual initialization steps. When an Agent enters a new project, if the memory infrastructure doesn't exist, the system should automatically create directories, generate an initial arch.md based on repository facts, and then continue normal operation. This means any project works out of the box as long as it has the global CLAUDE.md.
 
-## 三、架构设计
+## 3. Architecture Design
 
-### 3.1 记忆结构
+### 3.1 Memory Structure
 
 ```
 .aicoding/
-├── constitution.md          # 项目宪法：最高优先级原则（可选）
+├── constitution.md          # Project constitution: highest-priority principles (optional)
 └── memory/
-    ├── arch.md              # 架构概览：项目全景图，每次会话必加载
-    ├── adr/                 # 架构决策记录：选了什么、为什么
+    ├── arch.md              # Architecture overview: project panorama, loaded every session
+    ├── adr/                 # Architecture Decision Records: what was chosen and why
     │   ├── 001-xxx.md
     │   └── 002-xxx.md
-    └── devlog/              # 开发经验日志：踩了什么坑、学到什么
+    └── devlog/              # Development experience logs: pitfalls and lessons
         ├── 001-xxx.md
         └── 002-xxx.md
 ```
 
 #### arch.md
 
-项目的"一页纸架构速览"。内容包括技术栈、目录结构、核心数据流、模块职责、已知限制和技术债。AI Agent 阅读后应能在 30 秒内理解项目全貌。
+The project's "one-page architecture brief." Content includes tech stack, directory structure, core data flow, module responsibilities, known limitations, and technical debt. After reading it, an AI Agent should understand the full project picture within 30 seconds.
 
-**特点**：
-- 单文件，始终保持最新（覆盖式更新）
-- 每次会话强制加载
-- 控制在 200 行以内
+**Characteristics**:
+- Single file, always kept current (overwrite-style updates)
+- Force-loaded every session
+- Kept under 200 lines
 
-**自动生成原则**（首次进入项目时）：
+**Auto-generation principles** (on first project entry):
 
-arch.md 不使用固定模板，而是基于仓库事实按需生成：
+arch.md does not use a fixed template; instead, it's generated on demand based on repository facts:
 
-1. 仅包含从仓库文件中可验证的事实
-2. 优先提取架构事实：模块边界、数据流、构建/部署
-3. 保持最小但足够的内容，服务于未来召回和更新
-4. 无法推断的信息明确标记为 `Unknown` 或 `Not inferred`
-5. 幂等性：recall 模式下若 arch.md 已存在，不覆盖
+1. Include only verifiable facts from repository files
+2. Prioritize architecture facts: module boundaries, data flow, build/deploy
+3. Keep content minimal but sufficient for future recall and updates
+4. Mark unknowable information explicitly as `Unknown` or `Not inferred`
+5. Idempotent: in recall mode, if arch.md already exists, do not overwrite
 
-证据来源（按需加载）：目录结构、`package.json`、构建配置（`vite.config.*`、`tsconfig*`、`vercel.json` 等）。
+Evidence sources (loaded as needed): directory structure, `package.json`, build configs (`vite.config.*`, `tsconfig*`, `vercel.json`, etc.).
 
-#### ADR（Architecture Decision Record）
+#### ADR (Architecture Decision Record)
 
-记录**已做出的架构决策**。每条 ADR 回答一个问题："我们为什么选了这个方案？"
+Records **architectural decisions that have been made**. Each ADR answers one question: "Why did we choose this approach?"
 
-**准入标准**：
-- 比较了 2+ 种技术方案并做出了选择
-- 引入了新的架构模式或显著改变了现有架构
-- 决策对未来开发有约束力
+**Admission criteria**:
+- Compared 2+ technical approaches and made a choice
+- Introduced new architectural patterns or significantly changed existing ones
+- Decisions that constrain future development
 
-**不属于 ADR 的范畴**：
-- Bug 修复、重构、功能实现细节
-- 配置变更、依赖更新
+**Not in ADR scope**:
+- Bug fixes, refactoring, feature implementation details
+- Configuration changes, dependency updates
 
-#### DevLog（Development Log）
+#### DevLog (Development Log)
 
-记录**开发过程中的非显而易见发现**。每条 DevLog 回答一个问题："如果下次遇到类似场景，什么信息能帮我少走弯路？"
+Records **non-obvious discoveries during development**. Each DevLog answers one question: "If the next session encounters a similar scenario, what information would help it avoid a detour?"
 
-**准入标准（原则驱动而非规则驱动）**：
+**Admission criteria (principle-driven, not rule-driven)**:
 
-> "如果下一个会话遇到类似场景，这条信息能帮它避免绕弯吗？"
+> "If the next session encounters a similar scenario, would this information help it avoid a detour?"
 
-能就记，不能就不记。不做更多限制。
+If yes, record it. If not, don't. No further restrictions.
 
-**ADR 与 DevLog 的去重规则**：
+**ADR and DevLog deduplication rule**:
 
-系统在评估时先判断 ADR，再判断 DevLog。如果一个话题已经产生了 ADR，则只有在存在与该 ADR **完全无关的、独立的**调试洞察时，才额外创建 DevLog。这避免了同一个话题同时产生 ADR 和 DevLog 的冗余。
+The system evaluates ADR first, then DevLog. If a topic has already produced an ADR, a DevLog is only created if there is a **completely unrelated, independent** debugging insight. This avoids redundancy from the same topic producing both an ADR and a DevLog.
 
-**DevLog 与 ADR 的本质区别**：
-- ADR 记录"选择"（决策），DevLog 记录"发现"（经验）
-- ADR 有约束力（后续开发应遵循），DevLog 是建议（供参考）
-- ADR 是"我们决定用 WebSocket 而不是 SSE"，DevLog 是"WebSocket 在移动端弱网下心跳间隔要设到 30s 才稳定"
+**Essential difference between DevLog and ADR**:
+- ADR records "choices" (decisions), DevLog records "discoveries" (experience)
+- ADR is binding (subsequent development should follow), DevLog is advisory (for reference)
+- ADR is "We decided to use WebSocket instead of SSE"; DevLog is "WebSocket heartbeat interval needs to be set to 30s on mobile weak networks to be stable"
 
-### 3.2 检索机制：Grep 驱动的惰性检索
+### 3.2 Retrieval Mechanism: Grep-Driven Lazy Retrieval
 
-每个 ADR 和 DevLog 文件头部有 YAML frontmatter：
+Each ADR and DevLog file has YAML frontmatter in its header:
 
 ```yaml
 ---
@@ -157,277 +157,277 @@ tag: mem/003
 ---
 ```
 
-检索时不需要加载任何索引文件，直接用 Grep 搜索 frontmatter：
+Retrieval doesn't need to load any index file; it directly searches frontmatter with Grep:
 
 ```bash
-# 按技术标签
-Grep "^tags:.*chatgpt"    → 命中 ChatGPT 相关记忆
+# By technical tag
+Grep "^tags:.*chatgpt"    → matches ChatGPT-related memories
 
-# 按代码模块
-Grep "^modules:.*claude"  → 命中 Claude provider 相关记忆
+# By code module
+Grep "^modules:.*claude"  → matches Claude provider-related memories
 
-# 按问题描述
-Grep "^summary:.*stream"  → 命中流式处理相关记忆
+# By problem description
+Grep "^summary:.*stream"  → matches stream processing-related memories
 ```
 
-**为什么不用索引表**：
+**Why not use an index table**:
 
-| | 索引表 | Grep 搜索 |
+| | Index Table | Grep Search |
 |---|---|---|
-| 上下文开销 | O(N) —— 所有条目的摘要都要加载 | O(K) —— 只有命中的条目占上下文 |
-| 维护成本 | 每次写入都要同步更新索引 | 零维护 |
-| 扩展性 | 100+ 条就有上下文压力 | 1000+ 条也无压力（ripgrep 极快） |
-| 搜索精度 | 依赖 Agent 扫描全表做语义匹配 | Grep 精确匹配 + Agent 判断 |
+| Context overhead | O(N) — all entry summaries must be loaded | O(K) — only matched entries consume context |
+| Maintenance cost | Must sync-update index on every write | Zero maintenance |
+| Scalability | Context pressure at 100+ entries | No pressure even at 1000+ entries (ripgrep is fast) |
+| Search precision | Depends on Agent scanning full table for semantic matching | Grep exact match + Agent judgment |
 
-这个设计的核心洞察是：**把"遍历"的成本从上下文窗口转移到了工具调用**。Grep 在文件系统上遍历是免费的，但把遍历结果加载到上下文是昂贵的。
+The core insight of this design: **shift the "traversal" cost from the context window to tool calls**. Grep traversing the filesystem is free, but loading traversal results into context is expensive.
 
-### 3.3 Commit 绑定：Git Tag 方案
+### 3.3 Commit Binding: Git Tag Approach
 
-每条记忆需要关联到产生它的代码变更。常见做法是在文件中记录 commit hash，但这面临一个根本矛盾：
+Each memory needs to be associated with the code change that produced it. A common approach is to record the commit hash in the file, but this faces a fundamental contradiction:
 
-> 文件内容影响 commit hash，而 commit hash 又要写入文件内容。这是 content-addressable storage 的固有循环。
+> File content affects the commit hash, but the commit hash also needs to be written into the file content. This is an inherent cycle of content-addressable storage.
 
-**解决方案：用 git tag 代替 commit hash。**
+**Solution: use git tags instead of commit hashes.**
 
 ```
-1. 创建记忆文件，写入 tag: mem/003
-2. 代码 + 记忆文件一起 commit
+1. Create memory file, write tag: mem/003
+2. Commit code + memory files together
 3. git tag mem/003
 ```
 
-文件引用 tag → tag 指向 commit → 没有循环。`git show mem/003` 永远有效。
+File references tag → tag points to commit → no cycle. `git show mem/003` is always valid.
 
-Tag 命名规范：`mem/NNN`，全局递增。ADR 和 DevLog 共享编号空间。同一次 commit 产生的所有记忆文件共享同一个 tag。
+Tag naming convention: `mem/NNN`, globally incrementing. ADR and DevLog share the numbering space. All memory files created in the same commit share the same tag.
 
-### 3.4 Skill 体系：四层架构
+### 3.4 Skill System: Four-Layer Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ CLAUDE.md（全局配置，始终在上下文中）                    │
-│ 三条规则：                                            │
-│ 1. 会话开始 → /memory recall                          │
-│ 2. 遇到疑难 → /memory recall                          │
-│ 3. 进入项目 → 先读 .aicoding/constitution.md           │
+│ CLAUDE.md (global config, always in context)         │
+│ Three rules:                                         │
+│ 1. Session start → /memory recall                    │
+│ 2. Encounter uncertainty → /memory recall             │
+│ 3. Enter project → read .aicoding/constitution.md    │
 └────────────────────┬──────────────────────────────────┘
-                     │ 触发
+                     │ triggers
 ┌────────────────────▼──────────────────────────────────┐
-│ git-commit skill（流程编排层）                          │
+│ git-commit skill (orchestration layer)                │
 │                                                       │
 │ /git-commit                                           │
-│   分析变更 → 生成 Conventional Commits 消息             │
-│           → 调用 /memory update                        │
-│           → stage + commit + tag                       │
-│   整个流程原子执行，中途不等待用户输入                     │
+│   Analyze changes → generate Conventional Commits msg │
+│                   → invoke /memory update             │
+│                   → stage + commit + tag              │
+│   Entire flow executes atomically, no user waits      │
 └────────────────────┬──────────────────────────────────┘
-                     │ 调用
+                     │ invokes
 ┌────────────────────▼──────────────────────────────────┐
-│ memory skill（决策层）                                  │
+│ memory skill (decision layer)                         │
 │                                                       │
 │ /memory recall                                        │
-│   自动初始化基础设施（如不存在）                          │
-│   加载 arch.md + Grep 检索相关 ADR/DevLog               │
+│   Auto-init infrastructure (if missing)               │
+│   Load arch.md + Grep search relevant ADR/DevLog      │
 │                                                       │
 │ /memory update                                        │
-│   分析会话 → 判断要不要更新 arch.md                      │
-│             → 先评估 ADR → 调用子 skill（如需）          │
-│             → 再评估 DevLog（去重后）→ 调用子 skill       │
-│             → 协调 tag 编号                             │
+│   Analyze session → decide whether to update arch.md  │
+│                   → evaluate ADR first → invoke sub-skill (if needed) │
+│                   → then evaluate DevLog (after dedup) → invoke sub-skill │
+│                   → coordinate tag numbering           │
 └──────────┬──────────────────┬─────────────────────────┘
-           │                  │ 按需调用
+           │                  │ invoked on demand
 ┌──────────▼─────┐  ┌────────▼─────────┐
 │ adr-creator    │  │ devlog-creator   │
-│（纯写入）       │  │（纯写入）         │
-│ 含 references/ │  │ 含 references/   │
-│ 和 assets/     │  │                  │
+│ (pure writer)  │  │ (pure writer)    │
+│ w/ references/ │  │ w/ references/   │
+│ and assets/    │  │                  │
 └────────────────┘  └──────────────────┘
 ```
 
-**四层的设计理由**：
+**Rationale for four layers**:
 
-1. **CLAUDE.md**（总是在上下文中）：只有几条规则，几乎零开销。职责是"何时触发"和"全局约束"。
-2. **git-commit skill**（用户触发时加载）：~150 行流程编排。职责是"怎么提交"。将代码提交和记忆更新编排为一个原子操作，确保记忆与代码始终同步。
-3. **memory skill**（被 git-commit 调用或手动触发）：~200 行决策逻辑。职责是"做不做"。大多数 commit 到这里就结束了（结论："不需要更新"），不会触发下一层。
-4. **adr-creator / devlog-creator**（按需加载）：各 ~80-130 行写入规范，外加独立的格式参考文档。只在真正需要写记忆时才加载。写入器自带格式规范和模板，保证输出一致性。
+1. **CLAUDE.md** (always in context): Just a few rules, virtually zero overhead. Responsibility: "when to trigger" and "global constraints."
+2. **git-commit skill** (loaded on user trigger): ~150 lines of orchestration. Responsibility: "how to commit." Orchestrates code commit and memory update as an atomic operation, ensuring memory and code stay in sync.
+3. **memory skill** (invoked by git-commit or manually): ~200 lines of decision logic. Responsibility: "whether to do it." Most commits end here (conclusion: "no update needed"), without triggering the next layer.
+4. **adr-creator / devlog-creator** (loaded on demand): ~80-130 lines each of writing specifications, plus independent format reference documents. Only loaded when memory actually needs to be written. Writers carry their own format specs and templates, ensuring output consistency.
 
-**上下文开销对比**：
+**Context overhead comparison**:
 
-| 场景（占比） | 需要加载的 skill | 上下文开销 |
-|-------------|-----------------|-----------|
-| 普通 commit，无记忆更新（~70%） | git-commit + memory | ~350 行 |
-| 有 DevLog 的 commit（~25%） | git-commit + memory + devlog-creator | ~480 行 |
-| 有 ADR 的 commit（~5%） | git-commit + memory + adr-creator | ~530 行 |
+| Scenario (frequency) | Skills loaded | Context overhead |
+|----------------------|---------------|-----------------|
+| Normal commit, no memory update (~70%) | git-commit + memory | ~350 lines |
+| Commit with DevLog (~25%) | git-commit + memory + devlog-creator | ~480 lines |
+| Commit with ADR (~5%) | git-commit + memory + adr-creator | ~530 lines |
 
-核心收益不变：格式规范和模板只在需要写入时才被加载。
+Core benefit unchanged: format specifications and templates are only loaded when writing is needed.
 
-## 四、工作流
+## 4. Workflows
 
-### 4.1 会话开始：召回
-
-```
-用户发送第一条消息
-  → CLAUDE.md 规则触发
-  → Agent 先读 .aicoding/constitution.md（如存在）
-  → /memory recall 执行
-     ├─ 检查 .aicoding/memory/ 是否存在
-     │    └─ 不存在？→ 自动创建目录 + 生成 arch.md → 报告初始化完成
-     ├─ 加载 arch.md → Agent 了解项目全貌（呈现 3-5 行摘要）
-     ├─ 从用户消息提取关键词
-     │    └─ 无任务上下文？→ "Ready to search memories when your task is clear."
-     ├─ Grep 搜索 devlog/ 和 adr/ 的 frontmatter（多维度并行搜索）
-     └─ 加载命中的条目全文 → 向用户呈现相关记忆摘要
-  → Agent 开始处理用户任务（已有完整上下文）
-```
-
-### 4.2 开发过程中：按需召回
+### 4.1 Session Start: Recall
 
 ```
-Agent 在开发过程中遇到不确定的问题
-  → 主动执行 /memory recall
-  → Grep 搜索 → 加载相关记忆
-  → 继续开发
+User sends first message
+  → CLAUDE.md rules trigger
+  → Agent reads .aicoding/constitution.md first (if exists)
+  → /memory recall executes
+     ├─ Check if .aicoding/memory/ exists
+     │    └─ Missing? → Auto-create directories + generate arch.md → report initialization complete
+     ├─ Load arch.md → Agent understands project overview (present 3-5 line summary)
+     ├─ Extract keywords from user message
+     │    └─ No task context? → "Ready to search memories when your task is clear."
+     ├─ Grep search devlog/ and adr/ frontmatter (multi-dimensional parallel search)
+     └─ Load matched entries in full → present relevant memory summaries to user
+  → Agent begins processing user task (with full context)
 ```
 
-### 4.3 提交代码：更新
+### 4.2 During Development: On-Demand Recall
 
 ```
-用户说 /git-commit
-  → git-commit skill 执行（整个流程为原子操作）
+Agent encounters uncertain problem during development
+  → Proactively executes /memory recall
+  → Grep search → load relevant memories
+  → Continue development
+```
+
+### 4.3 Code Commit: Update
+
+```
+User says /git-commit
+  → git-commit skill executes (entire flow is atomic)
      │
-     ├─ Step 1: 分析会话上下文
-     │    └─ 理解代码变更、功能、决策
+     ├─ Step 1: Analyze session context
+     │    └─ Understand code changes, features, decisions
      │
-     ├─ Step 2: 检查 git 状态
-     │    └─ git status + git diff HEAD + git log（并行）
+     ├─ Step 2: Check git status
+     │    └─ git status + git diff HEAD + git log (parallel)
      │
-     ├─ Step 3: 生成 Conventional Commits 格式消息
-     │    └─ <type>(<scope>): <subject> + 详细 body
+     ├─ Step 3: Generate Conventional Commits format message
+     │    └─ <type>(<scope>): <subject> + detailed body
      │
-     ├─ Step 4: 调用 /memory update
-     │    ├─ 确保记忆基础设施存在
-     │    ├─ 分析会话，识别三类信号：
-     │    │    ├─ 架构变更？→ 更新 arch.md
-     │    │    ├─ 架构决策？→ 先评估，如需 → 调用 adr-creator
-     │    │    └─ 开发经验？→ 去重后评估，如需 → 调用 devlog-creator
-     │    ├─ 协调 tag 编号（ADR + DevLog 共享同一 tag）
-     │    └─ 返回：创建的文件列表 + tag 名称（或"无需更新"）
+     ├─ Step 4: Invoke /memory update
+     │    ├─ Ensure memory infrastructure exists
+     │    ├─ Analyze session, identify three signal types:
+     │    │    ├─ Architecture changes? → update arch.md
+     │    │    ├─ Architecture decisions? → evaluate first, if needed → invoke adr-creator
+     │    │    └─ Development experience? → evaluate after dedup, if needed → invoke devlog-creator
+     │    ├─ Coordinate tag numbering (ADR + DevLog share same tag)
+     │    └─ Return: list of created files + tag name (or "no updates needed")
      │
-     ├─ Step 5: git add -A（含记忆文件）
-     ├─ Step 6: git commit（heredoc 格式，不跳过 hooks）
-     ├─ Step 7: git tag mem/NNN（如有记忆文件）
-     └─ Step 8: git status + git log 验证
+     ├─ Step 5: git add -A (including memory files)
+     ├─ Step 6: git commit (heredoc format, no hook skipping)
+     ├─ Step 7: git tag mem/NNN (if memory files exist)
+     └─ Step 8: git status + git log verification
 ```
 
-**原子执行保证**：git-commit 的 Step 1-8 是一个不间断的流程。memory skill 内部调用子 skill（adr-creator、devlog-creator）完成后，控制权立即回到 git-commit 继续后续步骤，中途不暂停、不等待用户输入。
+**Atomic execution guarantee**: Steps 1-8 of git-commit are an uninterrupted flow. After the memory skill internally invokes sub-skills (adr-creator, devlog-creator) and they complete, control immediately returns to git-commit to continue subsequent steps — no pauses, no waiting for user input.
 
-## 五、落地要点
+## 5. Implementation Details
 
-### 5.1 arch.md 的维护
+### 5.1 Maintaining arch.md
 
-arch.md 不是写一次就不动的。它需要随代码演进而更新。更新由 memory skill 在每次 `/memory update` 时自动判断。
+arch.md is not a write-once artifact. It needs to be updated as code evolves. Updates are automatically judged by the memory skill during each `/memory update`.
 
-**判断原则**：
+**Judgment principle**:
 
-> "这次会话的变更是否使 arch.md 的任何章节变得事实上过时、不完整或有误导性？"
+> "Do this session's changes make any section of arch.md factually outdated, incomplete, or misleading?"
 
-**具体检查方法**：逐节对比 arch.md 中描述的结构、数据流、约定、已知限制，与本次会话变更后的代码库实际状态是否一致。
+**Specific check method**: Compare section by section — does the structure, data flow, conventions, and known limitations described in arch.md still match the actual codebase state after this session's changes.
 
-**触发更新的变更**：
-- 目录结构或模块边界变化
-- 通信协议、数据流、API 契约变化
-- 引入了 arch.md 未提及的新组件/服务/模式
-- 重构导致现有描述不准确
-- 技术债被解决或新发现
-- 开发约定变化（工具链、入门步骤、调试工作流）
+**Changes that trigger updates**:
+- Directory structure or module boundary changes
+- Communication protocol, data flow, or API contract changes
+- New components/services/patterns introduced that arch.md doesn't mention
+- Refactoring that makes existing descriptions inaccurate
+- Technical debt resolved or newly discovered
+- Development convention changes (toolchain, onboarding steps, debug workflows)
 
-**不触发更新的变更**：
-- 不改变架构或契约的 Bug 修复
-- 模块内部实现变更（arch.md 描述结构，不描述实现）
-- 无行为影响的依赖版本升级
+**Changes that don't trigger updates**:
+- Bug fixes that don't change architecture or contracts
+- Internal implementation changes within a module (arch.md describes structure, not implementation)
+- Dependency version bumps without behavioral impact
 
-### 5.2 DevLog 的质量控制
+### 5.2 DevLog Quality Control
 
-DevLog 采用原则驱动而非规则卡控。但仍需注意几个反模式：
+DevLog uses principle-driven rather than rule-driven quality control. But several anti-patterns should be noted:
 
-- **太模糊**："Gemini streaming 有些问题" → 没有可操作信息
-- **太啰嗦**："先试了方案 A，然后试了 B，接着试了 C..." → 这是实现日志，不是经验
-- **与 ADR 重叠**："我们决定用 API-first 策略因为..." → 这是决策，应该走 ADR
-- **代码已表达**："函数接受两个参数：provider 和 message" → 看代码就知道
+- **Too vague**: "Gemini streaming has some issues" → no actionable information
+- **Too verbose**: "First tried approach A, then B, then C..." → this is an implementation log, not experience
+- **Overlaps with ADR**: "We decided to use API-first strategy because..." → this is a decision, should be an ADR
+- **Code already expresses it**: "The function takes two parameters: provider and message" → just read the code
 
-合格的 DevLog 聚焦于**非显而易见的、可操作的发现**：
-- 非显而易见的调试发现（试了 X，因为 Y 失败，解决方案是 Z）
-- 第三方服务或 API 的隐藏行为
-- 环境/配置陷阱
-- 有具体数据的性能观察
-- 行不通的方案及原因
+Qualified DevLog entries focus on **non-obvious, actionable discoveries**:
+- Non-obvious debugging discoveries (tried X, failed because Y, solution was Z)
+- Hidden behaviors of third-party services or APIs
+- Environment/configuration gotchas
+- Performance observations with concrete data
+- Approaches that don't work and why
 
-### 5.3 Frontmatter 的设计
+### 5.3 Frontmatter Design
 
-frontmatter 是检索的生命线。写好 frontmatter 比写好正文更重要。
+Frontmatter is the lifeline of retrieval. Writing good frontmatter matters more than writing good body content.
 
-- **tags**：3-8 个关键词，覆盖技术栈、概念、问题类型。用小写。
-- **modules**：相关源码路径（相对于 src/），尽量精确到子模块。
-- **summary**：一行话，80 字符以内。想象别人会用什么关键词搜索到这条记忆，把那些词放进来。
-- **tag**：`mem/NNN` 格式的 git tag，关联到产生这条记忆的 commit。
+- **tags**: 3-8 keywords covering tech stack, concepts, problem types. Use lowercase.
+- **modules**: Relevant source code paths (relative to src/), as specific as possible to the sub-module.
+- **summary**: One line, under 80 characters. Imagine what keywords someone would use to search for this memory, and put those words in.
+- **tag**: Git tag in `mem/NNN` format, linking to the commit that produced this memory.
 
-### 5.4 适配到其他项目
+### 5.4 Adapting to Other Projects
 
-这套方案不依赖特定项目结构，且已实现**零配置启动**：
+This system doesn't depend on any specific project structure, and has achieved **zero-configuration bootstrap**:
 
-1. 全局 CLAUDE.md 已包含触发规则，新项目自动生效
-2. 首次会话时 `/memory recall` 自动创建 `.aicoding/memory/` 目录结构
-3. arch.md 由 Agent 基于仓库事实自动生成（非固定模板）
-4. 首次 `/git-commit` 时记忆更新流程自动工作
+1. Global CLAUDE.md already contains trigger rules; new projects work automatically
+2. First session's `/memory recall` automatically creates the `.aicoding/memory/` directory structure
+3. arch.md is auto-generated by the Agent based on repository facts (not a fixed template)
+4. First `/git-commit` triggers the memory update workflow automatically
 
-唯一的可选手动步骤是编写 `.aicoding/constitution.md`，定义项目的宪法级原则。
+The only optional manual step is writing `.aicoding/constitution.md` to define the project's constitutional principles.
 
-### 5.5 写入器的资源结构
+### 5.5 Writer Resource Structure
 
-adr-creator 和 devlog-creator 作为纯写入器，各自携带独立的格式规范：
+adr-creator and devlog-creator, as pure writers, each carry independent format specifications:
 
 ```
 adr-creator/
-├── SKILL.md              # 写入逻辑和质量清单
+├── SKILL.md              # Writing logic and quality checklist
 ├── references/
-│   └── adr-format.md     # 完整格式规范
+│   └── adr-format.md     # Complete format specification
 └── assets/
-    └── template.md       # ADR 模板
+    └── template.md       # ADR template
 
 devlog-creator/
-├── SKILL.md              # 写入逻辑
+├── SKILL.md              # Writing logic
 └── references/
-    └── devlog-format.md  # 格式规范（含正反例）
+    └── devlog-format.md  # Format specification (with positive/negative examples)
 ```
 
-这些参考文档只在写入器被调用时才加载，不增加常规路径的上下文开销。写入器根据格式规范自行处理编号、文件命名和 YAML frontmatter 生成。
+These reference documents are only loaded when the writer is invoked, adding no context overhead to the normal path. Writers handle numbering, file naming, and YAML frontmatter generation according to their format specifications.
 
-## 六、设计权衡与局限
+## 6. Design Trade-offs and Limitations
 
-### 已知局限
+### Known Limitations
 
-1. **Grep 检索无法做语义匹配**：如果用户问"性能优化"但 DevLog 写的是"响应延迟"，Grep 不会命中。缓解方式：在 tags 中主动包含同义词。
-2. **记忆不会自动过时**：代码改了但对应的 DevLog 没更新，可能产生误导。目前无自动清理机制。
-3. **依赖 Agent 的判断质量**：无论是"要不要记"还是"该搜什么"，都依赖 Agent 的判断。不同模型/版本的表现可能不同。
+1. **Grep retrieval cannot do semantic matching**: If the user asks about "performance optimization" but the DevLog says "response latency," Grep won't match. Mitigation: proactively include synonyms in tags.
+2. **Memories don't auto-expire**: If code changes but the corresponding DevLog isn't updated, it may be misleading. There is currently no automatic cleanup mechanism.
+3. **Depends on Agent's judgment quality**: Whether "should I record this" or "what should I search for," both depend on the Agent's judgment. Different models/versions may perform differently.
 
-### 有意做出的权衡
+### Intentional Trade-offs
 
-| 选择 | 放弃 | 理由 |
-|------|------|------|
-| Grep 检索 | 向量检索 | 零依赖、零维护、上下文开销 O(K) |
-| Git tag 绑定 | Commit hash 绑定 | 避免 content-addressable 循环问题 |
-| 原则驱动 DevLog | 规则驱动 DevLog | 避免信号过死遗漏有价值的经验 |
-| Skill 四层分拆 | 单一 Skill | 减少常见路径的上下文开销 |
-| CLAUDE.md 做触发器 | CLAUDE.md 含逻辑 | 记忆结构演进时不改 CLAUDE.md |
-| ADR 优先评估 + DevLog 去重 | 并行独立评估 | 避免同一话题产生重复记忆 |
-| 事实驱动的 arch.md 生成 | 固定模板 | 适配任意项目结构，避免空章节噪音 |
-| 零配置自动初始化 | 手动 setup 步骤 | 降低新项目接入摩擦 |
+| Choice | Given Up | Rationale |
+|--------|----------|-----------|
+| Grep retrieval | Vector search | Zero dependencies, zero maintenance, O(K) context overhead |
+| Git tag binding | Commit hash binding | Avoids content-addressable cycle problem |
+| Principle-driven DevLog | Rule-driven DevLog | Avoids overly rigid signals that miss valuable experience |
+| Four-layer skill split | Single skill | Reduces context overhead on the common path |
+| CLAUDE.md as trigger | CLAUDE.md with logic | Memory structure can evolve without changing CLAUDE.md |
+| ADR-first evaluation + DevLog dedup | Parallel independent evaluation | Avoids same topic producing duplicate memories |
+| Fact-driven arch.md generation | Fixed template | Adapts to any project structure, avoids empty section noise |
+| Zero-config auto-initialization | Manual setup steps | Reduces friction for new project onboarding |
 
-## 七、后续演进方向
+## 7. Future Evolution
 
-1. **记忆过期机制**：定期扫描 DevLog，标记可能已过时的条目（对应代码已大幅变更）
-2. **跨项目记忆**：某些经验是通用的（如"Chrome Extension MV3 的 Service Worker 5 分钟超时"），可以抽到全局记忆
-3. **记忆质量评估**：追踪哪些记忆被实际召回并使用了，哪些从未被触及，用于优化写入判断
-4. **语义检索增强**：在 frontmatter 中加入 Agent 生成的同义词/关联词，提升 Grep 的召回率
+1. **Memory expiration mechanism**: Periodically scan DevLogs, flag entries that may be outdated (corresponding code has changed significantly)
+2. **Cross-project memory**: Some experiences are universal (e.g., "Chrome Extension MV3 Service Worker has a 5-minute timeout"), could be extracted to global memory
+3. **Memory quality assessment**: Track which memories were actually recalled and used vs. never touched, to optimize writing decisions
+4. **Semantic retrieval enhancement**: Add Agent-generated synonyms/related terms in frontmatter to improve Grep recall
 
 ---
 
-*本文档本身就是这套记忆系统的产物 :)*
+*This document is itself a product of this memory system :)*
