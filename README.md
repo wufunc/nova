@@ -76,13 +76,27 @@ Installed locations:
 - Codex: skills in `~/.codex/skills/`, rules in `~/.codex/AGENTS.md`
 - Cursor: skills in `~/.cursor/skills/`, rules in `~/.cursor/rules/nova.mdc`
 
-### First Use
+### How to Use
 
-1. Open any project with Claude Code, Codex, or Cursor
-2. The agent automatically runs `/memory recall` at session start
-3. If `.nova/memory/` doesn't exist, it initializes automatically
-4. The agent generates `arch.md` from your repository structure
-5. When you `/git-commit`, memories are evaluated and created as needed
+nova's memory system is self-maintained:
+- At session start, the agent automatically runs `/memory recall`
+- If `.nova/memory/` does not exist, the system initializes it automatically
+- The system generates or updates `arch.md` from repository structure as needed
+- During the commit workflow, the system evaluates and creates required memories (ADR/DevLog)
+
+The only manual trigger is: run the `git-commit` skill once after each development unit is complete (`/git-commit` in Claude/Cursor, `$git-commit` in Codex).
+
+Recommended granularity: one `git-commit` per independently verifiable and reversible unit of work (for example, one bug fix, one small feature, or one focused refactor).
+
+If the granularity is too large (too many changes in one commit):
+- Commit intent and memory records become mixed, making retrieval harder
+- Rollback and cherry-pick become more costly and risky
+- Key decision context can be buried by unrelated changes
+
+If the granularity is too small (overly fragmented frequent commits):
+- Commit history and memory noise increase
+- More low-value records reduce recall signal quality
+- Team review and issue tracing become more fragmented
 
 ### Uninstall
 

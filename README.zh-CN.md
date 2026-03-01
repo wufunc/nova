@@ -76,13 +76,27 @@ bash install.sh --agents codex,cursor
 - Codex：skills 安装到 `~/.codex/skills/`，规则写入 `~/.codex/AGENTS.md`
 - Cursor：skills 安装到 `~/.cursor/skills/`，规则写入 `~/.cursor/rules/nova.mdc`
 
-### 首次使用
+### 如何使用
 
-1. 用 Claude Code、Codex 或 Cursor 打开任意项目
-2. Agent 在会话开始时自动执行 `/memory recall`
-3. 如果 `.nova/memory/` 不存在，自动初始化
-4. Agent 根据仓库结构自动生成 `arch.md`
-5. 当你执行 `/git-commit` 时，系统自动评估并创建所需记忆
+nova 的记忆系统是自维护的：
+- 会话开始时，Agent 自动执行 `/memory recall`
+- 如果 `.nova/memory/` 不存在，系统会自动初始化
+- 系统会根据仓库结构按需生成或更新 `arch.md`
+- 在提交流程中，系统会自动评估并创建所需记忆（ADR/DevLog）
+
+你唯一需要手动触发的是：每次开发完成后执行一次 `git-commit` skill（Claude/Cursor 使用 `/git-commit`，Codex 使用 `$git-commit`）。
+
+推荐执行粒度：一次 `git-commit` 对应一个可独立验证、可独立回滚的工作单元（例如一个 bug 修复、一个小功能、一次明确目的的重构）。
+
+粒度太大（一次包含过多改动）的缺点：
+- 提交意图和记忆记录会混杂，后续检索定位更困难
+- 回滚和 cherry-pick 成本更高，风险更大
+- 关键决策上下文容易被无关改动淹没
+
+粒度太小（过于碎片化频繁提交）的缺点：
+- 提交历史和记忆噪声增多，阅读成本变高
+- 低价值记录变多，降低后续召回信噪比
+- 团队评审和问题追踪会更碎片化
 
 ### 卸载
 
